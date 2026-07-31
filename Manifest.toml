@@ -1141,7 +1141,8 @@ version = "2.8.6"
 
 [[deps.PhyloMakie]]
 deps = ["DataFrames", "Makie", "PhyloNetworks"]
-path = "../PhyloMakie.jl"
+git-tree-sha1 = "c8bfe890934176d0a1c81c9e370da0a06a9e9b9b"
+repo-url = "git@github.com:jeetsukumaran/PhyloMakie.jl.git"
 uuid = "ccbd7354-87c9-452d-961c-17247803ee9f"
 version = "0.1.0"
 

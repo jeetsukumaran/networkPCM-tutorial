@@ -9,3 +9,6 @@ PhyloTraits = "bce24f4f-6725-4ba4-a77f-2b043c8e33c5"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
+
+[sources]
+PhyloMakie = {url = "git@github.com:jeetsukumaran/PhyloMakie.jl.git"}
