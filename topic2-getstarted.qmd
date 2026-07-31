@@ -13,7 +13,7 @@ using CSV               # read/write CSV and similar formats
 using DataFrames        # versatile tabular data format
 using PhyloNetworks     # includes many utilities
 using CairoMakie        # static-image Makie backend
-using PhyloMakie        # for plotting networks: native Julia, no R dependency
+using PhyloMakie        # for plotting networks
 using StatsBase, StatsModels # basic stat functions, e.g. to build regression formulas
 using Distributions     # to get probabilities and quantiles of common distributions
 ```
