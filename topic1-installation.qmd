@@ -57,17 +57,12 @@ The code is in files named like `topic*.qmd`.
 
 ### install packages
 
-Open julia, e.g. in a terminal integrated in VSCode. Preferably, open julia
-from the tutorial directory (cloned or downloaded earlier)
-to make it easier to use this directory as a julia environment.
+Your active Julia environment will need the following packages available:
 
-Then within julia, install
-[PhyloNetworks](https://juliaphylo.github.io/PhyloNetworks.jl/stable/man/installation/).
-Also install other packages, including:
-[PhyloMakie](https://github.com/jeetsukumaran/PhyloMakie.jl) for plotting
-networks (a pure-Julia, Makie-native package: no R installation is required)
-and [CairoMakie](https://docs.makie.org/stable/explanations/backends/cairomakie/)
-as the Makie backend used to render static figures.
+- the core [PhyloNetworks](https://juliaphylo.github.io/PhyloNetworks.jl/stable/man/installation/),
+- [PhyloMakie](https://github.com/jeetsukumaran/PhyloMakie.jl) for plotting networks, and
+- [CairoMakie](https://docs.makie.org/stable/explanations/backends/cairomakie/) as the Makie backend used to render static figures.
+
 For this, we suggest using the environment provided in this tutorial,
 which consists of the two `.toml` files that lists which packages to install
 (in `Project.toml`) and which versions exactly (in `Manifest.toml`).
@@ -77,6 +72,7 @@ and will install the exact versions of the packages used while writing this tuto
 of the GitHub repository).
 Here is how:
 
+- Open julia, e.g. in a terminal integrated in VSCode from  the tutorial directory (cloned or downloaded earlier)
 - type `]` to switch to package mode
 - type `activate .` if your current directory is the tutorial folder.
   Otherwise, type `activate path-to-tutorial-folder` to activate
@@ -86,18 +82,28 @@ Here is how:
   files. It will pre-compile them for the environment, in a way that won't
   interfere with other julia environments (if any).
 
-Alternatively, if you want to install these packages in the default or any
-other environment, type `]` to switch to package mode. Julia will show a prompt
-like this: `(networkPCM-tutorial) pkg>` showing the name of the folder used
-as environment, followed by "pkg>" to mean that it's in package mode.
-Then type this:
-```julia
-add CSV, DataFrames
-add Distributions, StatsBase, StatsModels
-add CairoMakie
-add PhyloNetworks
-add https://github.com/jeetsukumaran/PhyloMakie.jl # not yet in the General registry
+Alternatively, if you want to install these packages in the global environment, activated by launching Julia directly without a `--project` flag:
+
+
+```bash
+julia
 ```
+
+or some other specific environment of your choice, e.g.
+
+```bash
+cd projects/computing/learning/network-pcm
+julia --project=. 
+```
+and then run the following commands: 
+
+```julia
+using Pkg
+Pkg.add("PhyloNetworks")
+Pkg.add("CairoMakie")
+Pkg.add(url = "https://github.com/jeetsukumaran/PhyloMakie.jl")
+```
+
 Installation may take a while, especially if internet is slow.
 
 After this is done, type delete or backspace to go back to julian mode
