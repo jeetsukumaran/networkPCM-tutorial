@@ -6,7 +6,7 @@ format: html
 ```{julia}
 #| code-fold: true
 # code from prior sections
-using CSV, DataFrames, PhyloNetworks, PhyloPlots, RCall
+using CSV, DataFrames, PhyloNetworks, CairoMakie, PhyloMakie
 using StatsBase, StatsModels, PhyloTraits
 net = readnewick("data/polemonium_network_calibrated.phy");
 for tip in net.node tip.name = replace(tip.name, r"_2$" => s""); end
@@ -29,8 +29,7 @@ We can delete all the "minor" hybrid edges (with γ<0.5) as shown below.
 #| label: fig-4-majortree
 #| fig-cap: "major tree, drawn proportional to edge lengths"
 tree = majortree(net)
-R"par"(mar=[0,0,0,0]);
-plot(tree, tipoffset=0.05, useedgelength=true, xlim=[1,2.5]);
+plot(tree, tipoffset=0.05, useedgelength=true, xlim=[1,2.5])
 ```
 
 ```{julia}
@@ -107,7 +106,6 @@ the network and ask to see the edge numbers, as shown below.
 
 ```{julia}
 #| include: false
-R"par"(mar=[0,0,0,0]);
 plot(net, tipoffset=0.05, showedgenumber=true, xlim=[1,13]);
 ```
 

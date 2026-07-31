@@ -6,7 +6,7 @@ format: html
 ```{julia}
 #| code-fold: true
 # code from prior sections
-using CSV, DataFrames, PhyloNetworks, PhyloPlots, RCall, StatsBase, StatsModels
+using CSV, DataFrames, PhyloNetworks, StatsBase, StatsModels
 ```
 
 Phylogenetic regression and phylogenetic ANOVA are for:

@@ -81,3 +81,5 @@ Thumbs.db
 *.fa
 *.dat
 *.paml
+
+**/*.quarto_ipynb

@@ -7,7 +7,7 @@ format: html
 #| code-fold: true
 #| output: false
 # code from prior sections
-using CSV, DataFrames, PhyloNetworks, PhyloPlots, RCall
+using CSV, DataFrames, PhyloNetworks, CairoMakie, PhyloMakie
 using StatsBase, StatsModels, PhyloTraits
 net = readnewick("data/polemonium_network_calibrated.phy");
 for tip in net.node tip.name = replace(tip.name, r"_2$" => s""); end
@@ -74,10 +74,9 @@ that the node numbers match.
 #|   - "showing node numbers"
 #|   - "showing the posterior probability of state 'hi'"
 #| layout-ncol: 2
-R"par"(mar=[0,0,0,0]);
-plot(fit.net, shownodenumber=true, showgamma=true, tipoffset=0.1, xlim=[0,15]);
+display(plot(fit.net, shownodenumber=true, showgamma=true, tipoffset=0.1, xlim=[0,15])) # subfigure (a)
 plot(fit.net, nodelabel=select(asr, :nodenumber, :hi), nodelabeladj=[1,-0.1],
-     tipoffset=0.1, xlim=[0,15]);
+     tipoffset=0.1, xlim=[0,15]) # subfigure (b)
 ```
 
 ## effect of gene flow

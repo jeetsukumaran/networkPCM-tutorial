@@ -12,8 +12,8 @@ Load the packages we will use:
 using CSV               # read/write CSV and similar formats
 using DataFrames        # versatile tabular data format
 using PhyloNetworks     # includes many utilities
-using PhyloPlots        # for plotting networks: via R
-using RCall             # run R within Julia
+using CairoMakie        # static-image Makie backend
+using PhyloMakie        # for plotting networks: native Julia, no R dependency
 using StatsBase, StatsModels # basic stat functions, e.g. to build regression formulas
 using Distributions     # to get probabilities and quantiles of common distributions
 ```
@@ -32,8 +32,7 @@ and it will need to be rooted correctly later.
 #| label: fig-0-netsnaq
 #| fig-cap: "Polemonium network topology from SNaQ: needs rooting, branch lengths in coalescent units"
 net_snaq = readnewick("data/polemonium_network_fromSNaQ.phy");
-R"par"(mar=[0,0,0,0], cex=0.7); # 0 margins, cex<1 for smaller 'character expansion'
-plot(net_snaq; showedgelength=true, xlim=[0,18]); # increased limit to see full taxon labels
+plot(net_snaq; showedgelength=true, xlim=[0,18]) # increased limit to see full taxon labels
 ```
 
 then the trait data
@@ -77,9 +76,3 @@ size(traits_indiv) # number of rows and number of columns
   a package with `add ...`, change the version of a package you already installed,
   check what packages and what version you're currently using with `status`, etc.
   Type backspace to return to julian mode.
-
-- R mode, after using the RCall package: type `$` to access R. This R session
-  has access to the variables created by Julia, and vice versa.
-  Type backspace to return to julian mode.
-  Doing `@rlibrary ggplot2` within julia provides access to the R package
-  ggplot2 package outside the R mode and with easy syntax.

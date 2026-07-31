@@ -9,8 +9,8 @@ If not done during the session before, load necessary packages
 using CSV               # read/write CSV and similar formats
 using DataFrames        # versatile tabular data format
 using PhyloNetworks     # includes many utilities
-using PhyloPlots        # for plotting networks: via R
-using RCall             # run R within Julia
+using CairoMakie        # static-image Makie backend
+using PhyloMakie        # for plotting networks: native Julia, no R dependency
 using StatsBase, StatsModels
 ```
 
@@ -61,13 +61,13 @@ end
 # root the network correctly. Now we can use the short names
 rootatnode!(net_snaq, "micranthum") # 1 outgroup: micranthum. otherwise use rootonedge!
 # plot the network to see where we should rotate edges to uncross reticulations
-R"par"(mar=[0,0,0,0]); # change default margins to 0
-res = plot(net_snaq, shownodenumber=true);
-res[[:xmin, :xmax]] # (0.0, 12.1) : default x limits for this network
+res = plot(net_snaq, shownodenumber=true)
+display(res) # subfigure (a): each display() call becomes one fig-subcap panel
+Makie.data_limits(res.plot) # default x/y limits for this network
 for nodenumber in [-16, -17,-6,-4, -19,-21]
-  rotate!(net_snaq, nodenumber)
+  PhyloNetworks.rotate!(net_snaq, nodenumber) # qualified: Makie also exports rotate!
 end
-plot(net_snaq, xlim=[0,16]); # extend limits to show full taxon names
+plot(net_snaq, xlim=[0,16]) # subfigure (b): extend limits to show full taxon names
 ```
 
 ## input genetic distances
@@ -157,9 +157,8 @@ and peek at the resulting network:
 ```{julia}
 #| label: fig-1-netcal0
 #| fig-cap: "Polemonium network: after calibration, edges drawn proportional to their lengths"
-R"par"(mar=[0,0,0,0]);
-R"par"(cex=0.5) # decrease "character expansion" for smaller annotations later
-res = plot(net, useedgelength=true, showedgelength=true);
+res = plot(net, useedgelength=true, showedgelength=true)
+display(res)
 ```
 
 ## normalize the network height
@@ -189,9 +188,8 @@ for e in net.edge
     e.length /= rootage
 end
 getnodeages(net) |> maximum # 1.0, sanity check
-R"par"(mar=[0,0,0,0]);
-plot(net, useedgelength=true, xlim=[1,2.5], showgamma=true);
-plot(net, useedgelength=true, xlim=[1,2.5], style=:majortree, arrowlen=0.07);
+display(plot(net, useedgelength=true, xlim=[1,2.5], showgamma=true)) # subfigure (a)
+plot(net, useedgelength=true, xlim=[1,2.5], style=:majortree, arrowlen=0.07) # subfigure (b)
 ```
 
 Finally, let's save our calibrated network to a file:

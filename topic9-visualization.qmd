@@ -9,7 +9,7 @@ format:
 #| code-fold: true
 #| output: false
 # code from prior sections
-using CSV, DataFrames, PhyloNetworks, PhyloPlots, RCall
+using CSV, DataFrames, PhyloNetworks, CairoMakie, PhyloMakie
 using StatsBase, StatsModels, PhyloTraits
 net = readnewick("data/polemonium_network_calibrated.phy");
 for tip in net.node tip.name = replace(tip.name, r"_2$" => s""); end
@@ -27,6 +27,12 @@ For each example, we suggest that you go step by step and inspect each element
 in the code. The more the code makes sense, the more we can customize it later
 for our own needs on other data sets.
 
+Each example below renders the network with `plot!` into a plain Makie `Axis`,
+then composes native Makie primitives (`scatter!`, `text!`, `Makie.pie!`,
+`Legend`) on top of it. `node_positions`/`edge_positions` read node and edge
+coordinates directly off the rendered plot, so we never need to know a taxon's
+position in advance.
+
 ## discrete trait data at the tips
 
 Following the example of a [discrete](topic8-discrete.qmd) trait,
@@ -36,37 +42,46 @@ of high or low elevation, let's visualize the data at the tips.
 #| code-fold: true
 #| label: fig-6-tips-discrete
 #| fig-cap: "showing a discrete trait at the tips"
-R"par"(mar=[0,0,0,0]);
-# plot and save the "res"ult to get point coordinates, to use for adding annotation on top
-res = plot(net, tipoffset=0.5, xlim=[0.5,16]);
-res[[:xmin, :xmax, :ymin, :ymax]] # x and y limits
-res[:node_data]  # info to add node annotations
-res[:edge_data]  # info to add edge annotations
+figure = Figure(size = (900, 500))
+axis = Axis(figure[1, 1])
+hidedecorations!(axis)
+hidespines!(axis)
+plot_handle = plot!(axis, net; tipoffset=0.5, xlim=(0.5, 16))
 
-# find order "o" in which species from data are listed in the network -- and in res
+# query node/edge coordinates, to use for adding annotations on top
+node_table = node_positions(plot_handle)  # info to add node annotations
+edge_table = edge_positions(plot_handle)  # info to add edge annotations
+
+# find order "o" in which species from data are listed in the network -- and in node_table
 o = [findfirst(isequal(tax), dat.morph) for tax in tiplabels(net)]
 dat.morph[o] == tiplabels(net) # should be true, if order o is as intended
-tips = res[:node_data][!,:lea]
-dat.morph[o] == res[:node_data][tips,:name] # should be true
+tip_rows = filter(:isleaf => identity, node_table)
+dat.morph[o] == tip_rows.name # should be true
 
 # next: add grey & red points at the leaves
-tip_col = map(x -> (x=="lo" ? "grey" : "red"), dat.elevation[o])
-R"points"(
-    x=res[:node_data][tips,:x] .+0.1,
-    y=res[:node_data][tips,:y],
-    pch=16, col=tip_col, cex=1.5);
+tip_col = map(x -> (x=="lo" ? :grey : :red), dat.elevation[o])
+scatter!(axis, tip_rows.x .+ 0.1, tip_rows.y; color=tip_col, markersize=15)
 
 # next: add a legend to say which color is for which state
-R"legend"(x=1, y=19, legend=["hi","lo"], pch=16,
-    col=["red","grey"], title="elevation",
-    bty="n", var"title.adj"=0);
-    # var"" to allow for a dot in the variable name: R's fault...
+Legend(
+    figure[1, 2],
+    [MarkerElement(color=c, marker=:circle, markersize=15) for c in (:red, :grey)],
+    ["hi", "lo"];
+    title="elevation",
+)
 
 # next: add γ's for gene flow edges
-hybminor = res[:edge_data].min
-hybdf = res[:edge_data][hybminor, [:x,:y,:gam]]
-R"text"(hybdf.x .- 0.1, hybdf.y + 0.5.*[-1,1,1], hybdf.gam,
-        col="deepskyblue", cex=0.75);
+minor_hybrid_rows = filter(row -> row.ishybrid && !row.ismajor, edge_table)
+text!(
+    axis,
+    minor_hybrid_rows.x .- 0.1,
+    minor_hybrid_rows.y .+ 0.5 .* [-1, 1, 1];
+    text = string.(round.(minor_hybrid_rows.gamma; digits=2)),
+    color = :deepskyblue,
+    fontsize = 12,
+)
+
+figure
 ```
 
 ## ancestral probabilities
@@ -86,24 +101,41 @@ colnames = names(asr)[3:end] # to get the correct state - probability match
 asr[!,:fake] .= ""; # to add fake internal node labels later: and extract their positions
 asr # just to check
 
-coltrait = ["red","grey"] # or anything else: names that R knows how to interpret
+coltrait = (:red, :grey) # or anything else: a color Makie knows how to interpret
 
 # start the plot
-R"par"(mar=[0,0,0,0]);
-res = plot(fit.net, tipoffset=0.5, xlim=[0.5,16], arrowlen=0.15,
-           nodelabel = asr[:,[:nodenumber, :fake]]);
-ndf = res[:node_data] # had locations of internal nodes, this time
+figure = Figure(size = (900, 500))
+axis = Axis(figure[1, 1])
+hidedecorations!(axis)
+hidespines!(axis)
+plot_handle = plot!(
+    axis, fit.net;
+    tipoffset=0.5, xlim=(0.5, 16), arrowlen=0.15,
+    nodelabel = asr[:,[:nodenumber, :fake]],
+)
+node_table = node_positions(plot_handle) # had locations of internal nodes, this time
 
 # add pie charts, using locations of internal nodes
 for i in 1:nrow(asr) # loop over each row in the ancestral state reconstruction data frame
-  ii = findfirst(isequal(string(asr[!,:nodenumber][i])), ndf[!,:num]);
-  colpp = Vector(asr[i,colnames]);
-  R"ape::floating.pie.asp"(ndf[ii,:x], ndf[ii,:y], colpp,
-                           radius=0.2, col=coltrait);
+  ii = findfirst(isequal(asr[!,:nodenumber][i]), node_table.number)
+  colpp = Vector(asr[i,colnames])
+  Makie.pie!(
+      axis,
+      Makie.Point2f(node_table.x[ii], node_table.y[ii]),
+      colpp;
+      radius = 0.2,
+      color = collect(coltrait),
+  )
 end
 # add legend with correct mapping of color -> state
-R"legend"(x=1, y=19, legend=colnames, pch=21, var"pt.bg"=coltrait,
-          bty="n", title="elevation", var"title.adj"=0, var"pt.cex"=1.5);
+Legend(
+    figure[1, 2],
+    [PolyElement(color=c) for c in coltrait],
+    colnames;
+    title = "elevation",
+)
+
+figure
 ```
 
 ## continuous trait data at the tips
@@ -115,32 +147,55 @@ at the tips.
 #| code-fold: true
 #| label: fig-6-tips-continuous
 #| fig-cap: "bar plot to visualize continuous traits at the tips. red: above average. grey: below average"
-R"par"(mar=[2,0,1.5,0]);
 # plot the network with a large tip offset to leave space for bars
-res = plot(net, tipoffset=2.2, xlim=[0.5,17]);
+figure = Figure(size = (900, 550))
+axis = Axis(figure[1, 1])
+hidedecorations!(axis)
+hidespines!(axis)
+plot_handle = plot!(axis, net; tipoffset=2.2, xlim=(0.5, 17))
+tip_rows = filter(:isleaf => identity, node_positions(plot_handle))
 
 # create standardized version of elevation, such that 0 corresponds to the mean,
 # and such that the range covers an interval of length 2:
 # for the bars to fit between the tips and the taxon names
-o = [findfirst(isequal(tax), traits.morph) for tax in res[:node_data].name] # ordering
+o = [findfirst(isequal(tax), traits.morph) for tax in tip_rows.name] # ordering
 intervallength = 2
 std_elev = intervallength .* standardize(UnitRangeTransform, traits.elevation[o])
 std_elev .-= mean(std_elev) # now mean = 0, interval length still as desired
-linecol = [(el < 0 ? "grey" : "red") for el in std_elev] # grey if elevation < mean, red if elevation > mean
+linecol = [(el < 0 ? :grey : :red) for el in std_elev] # grey if elevation < mean, red if elevation > mean
 m = minimum(std_elev)    # new minimum elevation, after "standardization"
-x0 = res[:node_data][1,:x] + 0.1 # x where the smallest bar should extend
+x0 = tip_rows.x[1] + 0.1 # x where the smallest bar should extend
 xmean = x0 - m           # x where the mean value will go
-# create the bars
-R"segments"(x0 = xmean, x1 = xmean .+ std_elev,
-            y0=res[:node_data].y, col=linecol,
-            lwd=10, lend=1); # thick lines, line ends of "butt" type
+# create the bars: linesegments! takes one flat vector of alternating
+# (start, end) points, with one color per point
+bar_points = Makie.Point2f[]
+bar_colors = Symbol[]
+for (elev, y, col) in zip(std_elev, tip_rows.y, linecol)
+    push!(bar_points, Makie.Point2f(xmean, y))
+    push!(bar_points, Makie.Point2f(xmean + elev, y))
+    push!(bar_colors, col, col)
+end
+linesegments!(axis, bar_points; color = bar_colors, linewidth = 10)
 
-# label the horizontal axis to show the original min and max elevations
-min_evel, max_elev = round.(extrema(traits.elevation[o]), digits=2);
-R"axis"(at=[x0, x0+intervallength],
-        labels=round.([min_evel,max_elev], digits=2),
-        side=1, line=-0.5, tck=-0.01);
-R"text"(x=x0, y=21, "elevation (km)", adj=0);
+# add a small reference scale to show the original min and max elevations.
+# label positions are in data units (not a pixel offset), so Makie's
+# automatic axis limits expand to include them rather than clipping them.
+min_elev, max_elev = round.(extrema(traits.elevation[o]), digits=2)
+scale_y = minimum(tip_rows.y) - 1.5
+lines!(axis, [x0, x0 + intervallength], [scale_y, scale_y]; color = :black)
+text!(
+    axis,
+    [x0, x0 + intervallength], fill(scale_y - 0.8, 2);
+    text = string.([min_elev, max_elev]),
+    align = (:center, :top),
+)
+text!(
+    axis, x0 + intervallength / 2, scale_y - 1.8;
+    text = "elevation (km)",
+    align = (:center, :top),
+)
+
+figure
 ```
 
 
@@ -164,31 +219,37 @@ fit_larea = phylolm(@formula(larea ~ 1), traits, net, tipnames=:morph,
 asr_larea = predict(ancestralreconstruction(fit_larea))
 asr_larea[!,:fake] .= ""; # fake empty labels
 
-
-# convert numerical ancestral states to colors, using a palette
-asr_larea_01 = standardize(UnitRangeTransform, asr_larea.prediction) # values in 0-1
-@rlibrary viridis
-mypalette = rcopy(viridis(256)) # 256 possible colors in the palette
-import CategoricalArrays: cut
-breaks = [i/256 for i in 0:256]
-asr_larea_index = convert(Vector{Int}, cut(asr_larea_01, breaks; extend=true, labels=1:256))
-asr_larea_colr = mypalette[asr_larea_index]
-
 # start the plot
-R"par"(mar=[0,0,0,0]);
-res = plot(net, tipoffset=0.5, xlim=[0.5,16],
-           nodelabel = asr_larea[:,[:nodenumber, :fake]]);
+figure = Figure(size = (950, 500))
+axis = Axis(figure[1, 1])
+hidedecorations!(axis)
+hidespines!(axis)
+plot_handle = plot!(
+    axis, net;
+    tipoffset=0.5, xlim=(0.5, 16),
+    nodelabel = asr_larea[:,[:nodenumber, :fake]],
+)
+node_table = node_positions(plot_handle)
 
-# find order to match tips between asr_larea and res[:node_data]
-ndf = res[:node_data]
-o = [findfirst(isequal(nn), asr_larea.nodenumber) for nn in parse.(Int, ndf.num)]
-asr_larea.nodenumber[o] == parse.(Int, ndf.num) # should be true
+# find order to match tips between asr_larea and node_table
+o = [findfirst(isequal(nn), asr_larea.nodenumber) for nn in node_table.number]
+asr_larea.nodenumber[o] == node_table.number # should be true
 
-# add the colored circles
-R"points"(x=ndf.x, y=ndf.y, pch=16, col=asr_larea_colr[o], cex=1.5);
+# add the ancestral-state predictions as a continuous color gradient: no
+# manual palette, binning, or R round-trip needed, Makie interpolates directly
+scatter!(
+    axis, node_table.x, node_table.y;
+    color = asr_larea.prediction[o],
+    colormap = :viridis,
+    colorrange = extrema(asr_larea.prediction),
+    markersize = 15,
+)
+Colorbar(
+    figure[1, 2];
+    colormap = :viridis,
+    limits = extrema(asr_larea.prediction),
+    label = "log-leaflet area",
+)
 
-# add legend
-m,M = string.(round.(extrema(asr_larea.prediction), digits=2))
-R"legend"(x=0, y=19, bty="n", adj=0, var"y.intersp"=0.5, border="NA",
-    legend = [m,"","","",M], fill = mypalette[[1, 64, 128, 192, 256]]);
+figure
 ```

@@ -11,7 +11,6 @@ Here are steps to get ready for the tutorial.
   and add it to your [`PATH`](https://julialang.org/downloads/platform/#optional_add_julia_to_path)
 - install [VSCode](https://code.visualstudio.com/download)
   or another editor, if you don't have one already.
-- install [R](https://cran.r-project.org)
 
 ### customize VSCode
 
@@ -65,7 +64,10 @@ to make it easier to use this directory as a julia environment.
 Then within julia, install
 [PhyloNetworks](https://juliaphylo.github.io/PhyloNetworks.jl/stable/man/installation/).
 Also install other packages, including:
-[PhyloPlots](https://juliaphylo.github.io/PhyloPlots.jl/stable/man/installation/#Installation).
+[PhyloMakie](https://github.com/jeetsukumaran/PhyloMakie.jl) for plotting
+networks (a pure-Julia, Makie-native package: no R installation is required)
+and [CairoMakie](https://docs.makie.org/stable/explanations/backends/cairomakie/)
+as the Makie backend used to render static figures.
 For this, we suggest using the environment provided in this tutorial,
 which consists of the two `.toml` files that lists which packages to install
 (in `Project.toml`) and which versions exactly (in `Manifest.toml`).
@@ -90,22 +92,13 @@ like this: `(networkPCM-tutorial) pkg>` showing the name of the folder used
 as environment, followed by "pkg>" to mean that it's in package mode.
 Then type this:
 ```julia
-add CSV, CategoricalArrays, DataFrames
+add CSV, DataFrames
 add Distributions, StatsBase, StatsModels
-add RCall
+add CairoMakie
 add PhyloNetworks
-add PhyloPlots # do this after adding PhyloNetworks, to install a compatible version
+add https://github.com/jeetsukumaran/PhyloMakie.jl # not yet in the General registry
 ```
 Installation may take a while, especially if internet is slow.
 
 After this is done, type delete or backspace to go back to julian mode
 (exit from package mode). The julia prompt will go back to `julia>`.
-
-
-We will make use of R within Julia, and of some R functions
-in specific R packages.
-Install the `ape` and `viridis` packages in R:
-```r
-R> install.packages("viridis")
-R> install.packages("ape")
-```

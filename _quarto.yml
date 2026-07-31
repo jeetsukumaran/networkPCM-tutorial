@@ -46,5 +46,9 @@ format:
     css: styles.css
     toc: true
 
-# engines: ['julia'] # problem: due to each Rcall to R in a separate environment
-jupyter: julia-1.11  # older engine. solves the problem. installation more complex
+# No RCall/R dependency remains, so the old "each Rcall call needs its own
+# environment" reason for pinning the jupyter engine is gone. The native
+# `engine: julia` project setting was tried and did not render reliably in
+# testing, so this still uses the jupyter engine with an IJulia kernel;
+# match the kernel name below to whatever `julia -v` reports on your machine.
+jupyter: julia-1.12

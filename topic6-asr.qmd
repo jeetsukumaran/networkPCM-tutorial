@@ -6,7 +6,7 @@ format: html
 ```{julia}
 #| code-fold: true
 # code from prior sections
-using CSV, DataFrames, PhyloNetworks, PhyloPlots, RCall
+using CSV, DataFrames, PhyloNetworks, CairoMakie, PhyloMakie
 using StatsBase, StatsModels, PhyloTraits
 net = readnewick("data/polemonium_network_calibrated.phy");
 for tip in net.node tip.name = replace(tip.name, r"_2$" => s""); end
@@ -102,9 +102,8 @@ first(nodepred, 4)
 ```{julia}
 #| label: fig-3-asrmean
 #| fig-cap: "ancestral state reconstruction: species means conditional on data"
-R"par"(mar=[0,0,0,0]);
 plot(net, nodelabel=nodepred, nodecex=0.8, nodelabeladj=[1,-0.1],
-    tipoffset=0.1, xlim=[0,13]);
+    tipoffset=0.1, xlim=[0,13])
 ```
 
 ```{julia}
@@ -117,7 +116,6 @@ first(nodeint, 4)
 ```{julia}
 #| label: fig-3-asrint
 #| fig-cap: "ancestral state reconstruction: 95% prediction interval"
-R"par"(mar=[0,0,0,0]);
 plot(net, nodelabel=nodeint, nodecex=0.7, nodelabeladj=[1,-0.1],
-     tipoffset=0.1, xlim=[-0.1,13]);
+     tipoffset=0.1, xlim=[-0.1,13])
 ```
